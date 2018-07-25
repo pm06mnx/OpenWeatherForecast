@@ -7,7 +7,8 @@ import java.util.List;
 /**
  * Временное хранилище прогнозов
  */
-public class DataStorage {
+public enum DataStorage {
+    INSTANCE;
 
     private List<DayWeather> forecast;
 

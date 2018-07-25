@@ -1,7 +1,10 @@
 package com.example.pm06mnx.lesson12.list.dto;
 
+import com.example.pm06mnx.lesson12.service.dto.WeatherItem;
+
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Общий прогноз погоды на день для отображения в списке
@@ -14,6 +17,7 @@ public class DayWeather {
     private float minWindSpeed;
     private float maxWindSpeed;
     private Collection<String> description;
+    private List<WeatherItem> details;
 
     public Date getDay() {
         return day;
@@ -61,5 +65,13 @@ public class DayWeather {
 
     public void setDescription(Collection<String> description) {
         this.description = description;
+    }
+
+    public List<WeatherItem> getDetails() {
+        return details;
+    }
+
+    public void setDetails(List<WeatherItem> details) {
+        this.details = details;
     }
 }

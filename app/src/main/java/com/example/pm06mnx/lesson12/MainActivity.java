@@ -1,13 +1,11 @@
 package com.example.pm06mnx.lesson12;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
-import android.widget.Toast;
 
 import com.example.pm06mnx.lesson12.list.ForecastAdapter;
 import com.example.pm06mnx.lesson12.list.IRecyclerViewClickListener;
@@ -16,6 +14,7 @@ import com.example.pm06mnx.lesson12.service.OpenWeatherService;
 import com.example.pm06mnx.lesson12.service.dto.Forecast;
 import com.example.pm06mnx.lesson12.service.dto.WeatherItem;
 import com.example.pm06mnx.lesson12.utils.RetrofitHelper;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,26 +28,25 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements IRecyclerViewClickListener, RecyclerView.OnItemTouchListener {
+public class MainActivity extends AppCompatActivity implements IRecyclerViewClickListener {
 
     private OpenWeatherService service;
     private RecyclerView recyclerView;
-    private DataStorage dataStorage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        dataStorage = new DataStorage();
 
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new ForecastAdapter(dataStorage, this));
-        recyclerView.addOnItemTouchListener(this);
+        recyclerView.setAdapter(new ForecastAdapter(DataStorage.INSTANCE, this));
 
         service = RetrofitHelper.getOpenWeatherService();
         loadForecast();
+        Picasso.get().setIndicatorsEnabled(false);
+        Picasso.get().setLoggingEnabled(true);
     }
 
     private void loadForecast() {
@@ -58,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements IRecyclerViewClic
             public void onResponse(Call<Forecast> call, Response<Forecast> response) {
                 if (response.isSuccessful()) {
                     Forecast forecast = response.body();
-                    dataStorage.setForecast(convertResult(forecast.getList()));
+                    DataStorage.INSTANCE.setForecast(convertResult(forecast.getList()));
                     recyclerView.getAdapter().notifyDataSetChanged();
                 } else {
                     Log.e("GET_FORECAST_ERROR", "Ошибка получения прогноза, код "+response.code());
@@ -122,35 +120,15 @@ public class MainActivity extends AppCompatActivity implements IRecyclerViewClic
         dayWeather.setDescription(dayWeatherItemList.stream().map(u -> u.getWeather().get(0).getDescription()).collect(Collectors.toSet()));
         dayWeather.setMaxWindSpeed(Collections.max(dayWeatherItemList, new WindComparator()).getWind().getSpeed());
         dayWeather.setMinWindSpeed(Collections.min(dayWeatherItemList, new WindComparator()).getWind().getSpeed());
+        dayWeather.setDetails(dayWeatherItemList);
         return dayWeather;
     }
 
     @Override
     public void onItemClick(RecyclerView.ViewHolder sender, int adapterPosition, int viewType) {
-        Log.i("ON ITEM CLICK", "Click at position "+adapterPosition);
-        DayWeather dayWeather = ((ForecastAdapter) recyclerView.getAdapter()).getItemByPosition(adapterPosition);
-        Toast.makeText(this, dayWeather.getDay().toString(), Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
-        View child = rv.findChildViewUnder(e.getX(), e.getY());
-        if (child != null) {
-            long id = rv.getChildItemId(child);
-            long adapterPosition = rv.getChildAdapterPosition(child);
-            Log.i("ON ITEM CLICK INTERCEPT", "Click at position "+adapterPosition+" with id "+id);
-        }
-        return false;
-    }
-
-    @Override
-    public void onTouchEvent(RecyclerView rv, MotionEvent e) {
-
-    }
-
-    @Override
-    public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-
+        Intent intent = new Intent(this, ViewDetailsActivity.class);
+        intent.putExtra("DAY", adapterPosition);
+        startActivity(intent);
     }
 
     //TODO: null safe
